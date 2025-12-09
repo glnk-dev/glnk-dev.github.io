@@ -129,10 +129,10 @@ const SignUpPage: React.FC = () => {
               </p>
             </div>
 
-            {!isAuthenticated ? (
+            {!isAuthenticated || !username ? (
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-6">
-                  Sign in with GitHub to continue
+                  {isAuthenticated ? 'Please sign in again to continue' : 'Sign in with GitHub to continue'}
                 </p>
                 <button
                   onClick={handleGitHubLogin}

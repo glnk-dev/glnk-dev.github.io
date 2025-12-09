@@ -52,11 +52,15 @@ const fetchGitHubLogin = async (accessToken: string): Promise<string | null> => 
   return data.login ?? null;
 };
 
+const GITHUB_LOGIN_KEY = 'glnk_github_login';
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [githubLogin, setGithubLogin] = useState<string | null>(null);
+  const [githubLogin, setGithubLogin] = useState<string | null>(() => {
+    return localStorage.getItem(GITHUB_LOGIN_KEY);
+  });
 
   useEffect(() => {
     if (!auth) {
@@ -66,6 +70,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return onAuthStateChanged(auth, (firebaseUser) => {
       setUser(toUser(firebaseUser));
+      if (!firebaseUser) {
+        localStorage.removeItem(GITHUB_LOGIN_KEY);
+        setGithubLogin(null);
+      }
       setLoginError(null);
       setIsLoading(false);
     });
@@ -85,8 +93,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Failed to get access token');
       }
 
-      const login = await fetchGitHubLogin(accessToken);
-      setGithubLogin(login);
+      const ghLogin = await fetchGitHubLogin(accessToken);
+      if (ghLogin) {
+        localStorage.setItem(GITHUB_LOGIN_KEY, ghLogin);
+      }
+      setGithubLogin(ghLogin);
       setUser(toUser(result.user));
     } catch (error: unknown) {
       const isPopupClosed = (error as { code?: string }).code === 'auth/popup-closed-by-user';
@@ -98,6 +109,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = useCallback(async () => {
     if (auth) await signOut(auth);
+    localStorage.removeItem(GITHUB_LOGIN_KEY);
     setGithubLogin(null);
   }, []);
 
