@@ -25,16 +25,16 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: projects/1042177442694/locations/global/workloadIdentityPools/github/providers/glnk-dev
-          service_account: glnk-dev@playground-365100.iam.gserviceaccount.com
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Get secrets from Google Secret Manager
         id: secrets
         uses: google-github-actions/get-secretmanager-secrets@v3
         with:
           secrets: |-
-            firebase_api_key:playground-365100/glnk-dev-firebase-api-key
-            firebase_app_id:playground-365100/glnk-dev-firebase-app-id
+            firebase_api_key:${{ vars.GCP_PROJECT }}/glnk-dev-firebase-api-key
+            firebase_app_id:${{ vars.GCP_PROJECT }}/glnk-dev-firebase-app-id
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -47,8 +47,11 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo REACT_APP_FIREBASE_API_KEY=${{ steps.secrets.outputs.firebase_api_key }} > .env
-          echo REACT_APP_FIREBASE_APP_ID=${{ steps.secrets.outputs.firebase_app_id }} >> .env
+          echo REACT_APP_FIREBASE_API_KEY=$FIREBASE_API_KEY > .env
+          echo REACT_APP_FIREBASE_APP_ID=$FIREBASE_APP_ID >> .env
+        env:
+          FIREBASE_API_KEY: ${{ steps.secrets.outputs.firebase_api_key }}
+          FIREBASE_APP_ID: ${{ steps.secrets.outputs.firebase_app_id }}
 
       - name: Build
         run: npm run build
