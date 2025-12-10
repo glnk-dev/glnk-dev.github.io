@@ -18,8 +18,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout webapp
+        uses: actions/checkout@v6
+        with:
+          repository: glnk-dev/webapp
+          ref: main
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -47,7 +50,8 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo REACT_APP_FIREBASE_API_KEY=$FIREBASE_API_KEY > .env
+          echo REACT_APP_GLNK_ACCESS_MODE=homepage > .env
+          echo REACT_APP_FIREBASE_API_KEY=$FIREBASE_API_KEY >> .env
           echo REACT_APP_FIREBASE_APP_ID=$FIREBASE_APP_ID >> .env
         env:
           FIREBASE_API_KEY: ${{ steps.secrets.outputs.firebase_api_key }}
