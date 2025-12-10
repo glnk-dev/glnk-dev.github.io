@@ -3,12 +3,14 @@ import { GitHubIcon } from '../components/icons/GitHubIcon';
 import { ExternalLinkIcon } from '../components/icons/ExternalLinkIcon';
 import { LogoutIcon } from '../components/icons/LogoutIcon';
 import { useAuth } from '../contexts/AuthContext';
+import { requestSignup } from '../lib/firebase';
 
 const SignUpPage: React.FC = () => {
   const { githubLogin, login, logout, isAuthenticated, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const username = githubLogin || '';
   const previewUrl = username ? `${username.toLowerCase()}.glnk.dev` : 'username.glnk.dev';
@@ -26,15 +28,20 @@ const SignUpPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username) return;
+    if (!username || !requestSignup) return;
 
     setIsSubmitting(true);
-    
-    // TODO: Call GitHub Action workflow to register new user
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setSubmitted(true);
-    setIsSubmitting(false);
+    setError(null);
+
+    try {
+      await requestSignup({ username });
+      setSubmitted(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit request';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -184,9 +191,15 @@ const SignUpPage: React.FC = () => {
                   </ul>
                 </div>
 
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={!username || isSubmitting}
+                  disabled={!username || isSubmitting || !requestSignup}
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors"
                 >
                   {isSubmitting ? (
